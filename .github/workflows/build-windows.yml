@@ -1,0 +1,43 @@
+name: Build OpenRGB Windows x64
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build-win64:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+          modules: 'qt5compat'
+
+      - name: Setup MSVC Environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build OpenRGB
+        run: |
+          qmake OpenRGB.pro
+          nmake release
+
+      - name: Package Build
+        run: |
+          mkdir OpenRGB_Win64
+          copy release\OpenRGB.exe OpenRGB_Win64\
+          windeployqt --release --no-translations OpenRGB_Win64\OpenRGB.exe
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenRGB_Win64_Custom
+          path: OpenRGB_Win64/
